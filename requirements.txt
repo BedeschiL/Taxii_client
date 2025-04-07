@@ -1,0 +1,4 @@
+flask
+stix2
+taxii2-client
+python-dotenv
