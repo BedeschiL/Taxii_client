@@ -5,304 +5,592 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TAXII Feed Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#4AD0B0',
+                        primary: {
+                            DEFAULT: '#4AD0B0',
+                            50: '#E8F9F5',
+                            100: '#D1F3EA',
+                            200: '#A3E7D5',
+                            300: '#75DBC0',
+                            400: '#4AD0B0',
+                            500: '#36B89A',
+                            600: '#2A8F77',
+                            700: '#1E6655',
+                            800: '#123C32',
+                            900: '#061310',
+                        },
                         secondary: '#E65C4F',
-                        dark: '#0D0D0D',
+                        dark: {
+                            DEFAULT: '#0D0D0D',
+                            50: '#F5F5F5',
+                            100: '#E0E0E0',
+                            200: '#B3B3B3',
+                            300: '#808080',
+                            400: '#4D4D4D',
+                            500: '#262626',
+                            600: '#1A1A1A',
+                            700: '#0D0D0D',
+                            800: '#0A0A0A',
+                            900: '#050505',
+                        },
                         'dark-lighter': '#1a1a1a',
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'wave': 'wave 12s linear infinite',
+                        'gradient': 'gradient 8s ease infinite',
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
                     },
                     keyframes: {
                         float: {
                             '0%, 100%': { transform: 'translateY(0)' },
                             '50%': { transform: 'translateY(-10px)' },
+                        },
+                        wave: {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                            '100%': { backgroundPosition: '0% 50%' },
+                        },
+                        gradient: {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: 0 },
+                            '100%': { opacity: 1 },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: 0 },
+                            '100%': { transform: 'translateY(0)', opacity: 1 },
+                        },
+                        glow: {
+                            '0%': { 'box-shadow': '0 0 5px rgba(74, 208, 176, 0.5)' },
+                            '100%': { 'box-shadow': '0 0 20px rgba(74, 208, 176, 0.8)' },
                         }
                     }
                 }
             }
         }
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0D0D0D 100%);
+        }
+
+        /* Modern scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4AD0B0;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #36B89A;
+        }
+
+        /* Card styling */
+        .card {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 208, 176, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(74, 208, 176, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Input styling */
+        .input-field {
+            transition: all 0.3s ease;
+            background: rgba(13, 13, 13, 0.7);
+            border: 1px solid rgba(74, 208, 176, 0.1);
+        }
+
+        .input-field:focus {
+            border-color: #4AD0B0;
+            box-shadow: 0 0 0 3px rgba(74, 208, 176, 0.2);
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background: linear-gradient(135deg, #4AD0B0 0%, #36B89A 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(74, 208, 176, 0.4);
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .btn-primary:hover::after {
+            left: 100%;
+        }
+
+        /* Table styling */
+        .table-row {
+            transition: all 0.2s ease;
+        }
+
+        .table-row:hover {
+            background: rgba(74, 208, 176, 0.05) !important;
+        }
+
+        /* Seigaiha pattern for footer */
+        .seigaiha-bg {
+            background-image: url('/static/images/sei.png'); /* Placeholder - replace with actual seigaiha pattern */
+            background-size: 300px;
+            background-repeat: repeat;
+            opacity: 0.1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: wave 60s linear infinite;
+        }
+
+        /* Animated gradient border */
+        .gradient-border {
+            position: relative;
+            z-index: 1;
+        }
+
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #4AD0B0, #E65C4F, #4AD0B0);
+            background-size: 200% 200%;
+            z-index: -1;
+            border-radius: inherit;
+            animation: gradient 3s ease infinite;
+            opacity: 0.7;
+        }
+
+        /* Pulse animation for important elements */
+        .pulse-element {
+            animation: pulse-slow 3s infinite;
+        }
+
+        /* Glowing effect for active items */
+        .glow-active {
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        /* Custom animations */
+        @keyframes float-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .float-bounce {
+            animation: float-bounce 4s ease-in-out infinite;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .seigaiha-bg {
+                background-size: 200px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-dark text-white min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-primary mb-2">TAXII Feed Viewer</h1>
-            <p class="text-gray-400">Monitor threat intelligence feeds in real-time</p>
-        </header>
-                <div class="mb-6 p-4 bg-dark rounded border border-gray-700">
-            <h3 class="text-lg font-medium text-primary mb-3">Discover Collections</h3>
-            <div class="flex flex-col md:flex-row gap-4 mb-3">
-                <div class="flex-1">
-                    <input type="url" id="discovery-url" placeholder="TAXII Server URL" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                </div>
-                <div class="w-full md:w-48">
-                    <input type="text" id="discovery-username" placeholder="Username (optional)" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                </div>
-                <div class="w-full md:w-48">
-                    <input type="password" id="discovery-password" placeholder="Password (optional)" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                </div>
-                <button id="discover-btn" class="bg-secondary hover:bg-opacity-80 text-white font-bold py-2 px-4 rounded transition">
-                    Discover
-                </button>
-            </div>
-
-            <div id="discovery-results" class="hidden">
-                <h4 class="text-md font-medium text-gray-300 mb-2">Available Collections</h4>
-                <div id="collections-list" class="max-h-60 overflow-y-auto">
-                    <!-- Collections will be populated here -->
-                </div>
-            </div>
-
-            <div id="discovery-error" class="hidden mt-3 p-3 bg-red-900 text-red-100 rounded text-sm"></div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Feed Management Section -->
-            <div class="bg-dark-lighter p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-semibold text-primary mb-4">Feed Management</h2>
-
-                <form action="/add_feed" method="POST" class="mb-6">
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Feed Name</label>
-                        <input type="text" name="name" required class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">TAXII Server URL</label>
-                        <input type="url" name="url" required class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Collection Name</label>
-                        <input type="text" name="collection" required class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Username (optional)</label>
-                        <input type="text" name="username" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Password (optional)</label>
-                        <input type="password" name="password" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                    </div>
-                    <button type="submit" class="bg-primary hover:bg-opacity-80 text-dark font-bold py-2 px-4 rounded transition">
-                        Add Feed
-                    </button>
-                </form>
-
-                <h3 class="text-xl font-semibold text-primary mb-3">Configured Feeds</h3>
-                <div class="space-y-3">
-                    {% for feed in feeds %}
-                    <div class="bg-dark p-3 rounded border border-gray-700 flex justify-between items-center">
-                        <div>
-                            <h4 class="font-medium">{{ feed.name }}</h4>
-                            <p class="text-sm text-gray-400">{{ feed.collection }}</p>
+<body class="min-h-screen flex flex-col">
+    <div class="flex-grow">
+        <div class="container mx-auto px-4 py-8 max-w-7xl">
+            <!-- Header Section with animated gradient border -->
+            <header class="mb-8 pb-6 animate-fade-in">
+                <div class="gradient-border rounded-xl p-1">
+                    <div class="bg-dark-700 rounded-lg p-6">
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div>
+                                <h1 class="text-4xl font-bold text-primary-400 mb-2 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mr-3 float-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    TAXII Feed Viewer
+                                </h1>
+                                <p class="text-gray-400">Monitor and analyze threat intelligence feeds in real-time</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="card px-4 py-3 hover:glow-active">
+                                    <div class="text-xs text-gray-400">Indicators</div>
+                                    <div class="text-xl font-bold" id="indicator-count">{{ indicators|length }}</div>
+                                </div>
+                                <div class="card px-4 py-3">
+                                    <div class="text-xs text-gray-400">Feeds</div>
+                                    <div class="text-xl font-bold">{{ feeds|length }}</div>
+                                </div>
+                            </div>
                         </div>
-                        <form action="/delete_feed/{{ loop.index0 }}" method="POST">
-                            <button type="submit" class="text-secondary hover:text-red-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </form>
                     </div>
-                    {% else %}
-                    <p class="text-gray-400">No feeds configured</p>
+                </div>
+            </header>
+
+            <!-- Discovery Section -->
+            <div class="mb-8 card p-6 animate-slide-up" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-primary-400 flex items-center">
+                        <i class="fas fa-search mr-2"></i>
+                        Discover Collections
+                    </h3>
+                    <button id="toggle-discovery" class="text-gray-400 hover:text-primary-400 transition-transform transform hover:rotate-180">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+
+                <div id="discovery-form" class="transition-all duration-300 overflow-hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-300 mb-1">TAXII Server URL</label>
+                            <div class="flex">
+                                <select class="input-field border-r-0 rounded-l-lg px-3 py-2 text-sm">
+                                    <option>https://</option>
+                                    <option>http://</option>
+                                </select>
+                                <input type="url" id="discovery-url" placeholder="taxii.example.com/api"
+                                       class="input-field flex-1 rounded-r-lg px-3 py-2">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">API Root</label>
+                            <input type="text" id="discovery-api-root" placeholder="default"
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Username (optional)</label>
+                            <input type="text" id="discovery-username" placeholder="Username"
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Password (optional)</label>
+                            <input type="password" id="discovery-password" placeholder="Password"
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button id="discover-btn" class="btn-primary text-dark-800 font-medium py-2 px-6 rounded-lg flex items-center">
+                            <i class="fas fa-search mr-2"></i>
+                            Discover Collections
+                        </button>
+                    </div>
+                </div>
+
+                <div id="discovery-results" class="hidden mt-6 bg-dark-700 rounded-lg border border-gray-800 overflow-hidden transition-all duration-300">
+                    <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-dark-600">
+                        <h4 class="font-medium text-primary-400">Available Collections</h4>
+                        <span class="text-xs bg-primary-400 text-dark-800 px-2 py-1 rounded-full font-medium" id="collection-count">0 found</span>
+                    </div>
+                    <div id="collections-list" class="divide-y divide-gray-800 max-h-96 overflow-y-auto">
+                        <!-- Collections will be populated here -->
+                    </div>
+                </div>
+
+                <div id="discovery-error" class="hidden mt-4 p-3 bg-red-900/50 border border-red-700 text-red-100 rounded-lg text-sm"></div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Feed Management Section -->
+                <div class="card p-6 animate-slide-up" style="animation-delay: 0.2s">
+                    <h2 class="text-2xl font-semibold text-primary-400 mb-6 flex items-center">
+                        <i class="fas fa-rss mr-2"></i>
+                        Feed Management
+                    </h2>
+
+                    <form action="/add_feed" method="POST" class="mb-8 space-y-4">
+                        <div>
+                            <label class="block text-gray-300 mb-2 text-sm font-medium">Feed Name</label>
+                            <input type="text" name="name" required
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 mb-2 text-sm font-medium">TAXII Server URL</label>
+                            <input type="url" name="url" required
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 mb-2 text-sm font-medium">Collection Name</label>
+                            <input type="text" name="collection" required
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 mb-2 text-sm font-medium">Username (optional)</label>
+                            <input type="text" name="username"
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 mb-2 text-sm font-medium">Password (optional)</label>
+                            <input type="password" name="password"
+                                   class="input-field w-full px-3 py-2 rounded-lg">
+                        </div>
+                        <button type="submit" class="btn-primary w-full text-dark-800 font-bold py-2 px-4 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add Feed
+                        </button>
+                    </form>
+
+                    <h3 class="text-xl font-semibold text-primary-400 mb-4 flex items-center">
+                        <i class="fas fa-list mr-2"></i>
+                        Configured Feeds
+                    </h3>
+                    <div class="space-y-3">
+                        {% for feed in feeds %}
+                        <div class="card p-4 flex justify-between items-center indicator-row">
+                            <div>
+                                <h4 class="font-medium text-gray-100">{{ feed.name }}</h4>
+                                <p class="text-sm text-gray-400">{{ feed.collection }}</p>
+                            </div>
+                            <form action="/delete_feed/{{ loop.index0 }}" method="POST">
+                                <button type="submit" class="text-secondary hover:text-red-400 transition-colors" title="Delete Feed">
+                                    <i class="fas fa-trash"></i>
+                            </form>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Indicators Section -->
-            <div class="lg:col-span-2 bg-dark-lighter p-6 rounded-lg shadow-lg">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold text-primary">Threat Indicators</h2>
-                    <button id="refresh-btn" class="bg-primary hover:bg-opacity-80 text-dark font-bold py-2 px-4 rounded transition flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                        </svg>
-                        Refresh
-                    </button>
-                </div>
-
-                <form action="/search" method="GET" class="mb-6">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" name="q" placeholder="Search indicators..." value="{{ request.args.get('q', '') }}" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
+            <div class="lg:col-span-2 card p-6 animate-slide-up" style="animation-delay: 0.3s">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                    <h2 class="text-2xl font-semibold text-primary-400 flex items-center">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        Threat Indicators
+                    </h2>
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <input type="text" id="indicator-search" placeholder="Search indicators..."
+                                   class="input-field pl-10 pr-4 py-2 rounded-lg w-full md:w-64">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                         </div>
-                        <div class="w-full md:w-48">
-                            <select name="type" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded focus:outline-none focus:border-primary">
-                                <option value="">All types</option>
-                                <option value="malware" {% if request.args.get('type') == 'malware' %}selected{% endif %}>Malware</option>
-                                <option value="phishing" {% if request.args.get('type') == 'phishing' %}selected{% endif %}>Phishing</option>
-                                <option value="ip" {% if request.args.get('type') == 'ip' %}selected{% endif %}>IP Address</option>
-                                <option value="domain" {% if request.args.get('type') == 'domain' %}selected{% endif %}>Domain</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="bg-primary hover:bg-opacity-80 text-dark font-bold py-2 px-4 rounded transition">
-                            Search
+                        <button id="refresh-indicators" class="btn-primary text-dark-800 font-bold py-2 px-4 rounded-lg flex items-center">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Refresh
                         </button>
                     </div>
-                </form>
+                </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-700">
-                        <thead>
+                    <table class="min-w-full divide-y divide-gray-800">
+                        <thead class="bg-dark-600">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">Type</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">Value</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">Source</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">Last Seen</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Value</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">First Seen</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-700">
+                        <tbody class="bg-dark-700 divide-y divide-gray-800">
                             {% for indicator in indicators %}
-                            <tr class="hover:bg-dark transition">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="px-2 py-1 text-xs rounded-full
-                                        {% if 'malware' in indicator.type.lower() %}bg-red-900 text-red-300
-                                        {% elif 'phishing' in indicator.type.lower() %}bg-yellow-900 text-yellow-300
-                                        {% else %}bg-blue-900 text-blue-300{% endif %}">
-                                        {{ indicator.type }}
-                                    </span>
+                            <tr class="table-row hover:bg-dark-600 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-5 w-5 text-primary-400">
+                                            {% if indicator.type == "ipv4-addr" %}
+                                            <i class="fas fa-network-wired"></i>
+                                            {% elif indicator.type == "domain-name" %}
+                                            <i class="fas fa-globe"></i>
+                                            {% elif indicator.type == "url" %}
+                                            <i class="fas fa-link"></i>
+                                            {% elif indicator.type == "file" %}
+                                            <i class="fas fa-file"></i>
+                                            {% else %}
+                                            <i class="fas fa-question-circle"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-100">{{ indicator.type }}</div>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div class="text-sm font-medium">{{ indicator.value }}</div>
-                                    {% if indicator.description %}
-                                    <div class="text-xs text-gray-400">{{ indicator.description|truncate(50) }}</div>
-                                    {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-100 font-mono">{{ indicator.value }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-sm">{{ indicator.source }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-400">{{ indicator.last_seen }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-gray-400">
-                                    No indicators found. Add feeds and click Refresh to fetch data.
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-400">{{ indicator.source }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-400">{{ indicator.first_seen }}</div>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
+                <div class="mt-4 flex items-center justify-between text-sm text-gray-400">
+                    <div>
+                        Showing <span class="font-medium">{{ indicators|length }}</span> indicators
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-600 transition-colors">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span>Page 1 of 1</span>
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-600 transition-colors">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        document.getElementById('refresh-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('refresh-btn');
-            btn.disabled = true;
-            btn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Refreshing...
-            `;
+<!-- Footer with Seigaiha pattern -->
+<footer class="bg-dark-800 text-gray-400 py-8 relative overflow-hidden">
+    <div class="seigaiha-bg"></div>
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-lg font-semibold text-primary-400 mb-2">TAXII Feed Viewer</h3>
+                <p class="text-sm">A tool for monitoring and analyzing threat intelligence feeds</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#" class="hover:text-primary-400 transition-colors">
+                    <i class="fab fa-github fa-lg"></i>
+                </a>
+                <a href="#" class="hover:text-primary-400 transition-colors">
+                    <i class="fas fa-book fa-lg"></i>
+                </a>
+                <a href="#" class="hover:text-primary-400 transition-colors">
+                    <i class="fas fa-question-circle fa-lg"></i>
+                </a>
+            </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-gray-700 text-center text-xs">
+            <p>© 2023 TAXII Feed Viewer. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
 
-            try {
-                const response = await fetch('/refresh_feeds', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
+<script>
+    // Toggle discovery section
+    document.getElementById('toggle-discovery').addEventListener('click', function() {
+        const form = document.getElementById('discovery-form');
+        const icon = this.querySelector('i');
 
-                const data = await response.json();
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert('Error refreshing feeds');
-                }
-            } catch (error) {
-                alert('Error refreshing feeds');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                    </svg>
-                    Refresh
-                `;
-            }
-        });
-
-        <!--  for discovery button -->
-        document.getElementById('discover-btn').addEventListener('click', async function() {
-    const serverUrl = document.getElementById('discovery-url').value;
-    const username = document.getElementById('discovery-username').value;
-    const password = document.getElementById('discovery-password').value;
-
-    if (!serverUrl) {
-        document.getElementById('discovery-error').textContent = 'Please enter a TAXII server URL';
-        document.getElementById('discovery-error').classList.remove('hidden');
-        return;
-    }
-
-    const btn = document.getElementById('discover-btn');
-    btn.disabled = true;
-    btn.innerHTML = 'Discovering...';
-
-    document.getElementById('discovery-error').classList.add('hidden');
-    document.getElementById('discovery-results').classList.add('hidden');
-
-    try {
-        const formData = new FormData();
-        formData.append('server_url', serverUrl);
-        if (username) formData.append('username', username);
-        if (password) formData.append('password', password);
-
-        const response = await fetch('/discover_collections', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const collectionsList = document.getElementById('collections-list');
-            collectionsList.innerHTML = '';
-
-            if (data.collections.length === 0) {
-                collectionsList.innerHTML = '<p class="text-gray-400 p-2">No collections found on this server</p>';
-            } else {
-                data.collections.forEach(collection => {
-                    const collectionEl = document.createElement('div');
-                    collectionEl.className = 'p-3 border-b border-gray-700 hover:bg-dark cursor-pointer';
-                    collectionEl.innerHTML = `
-                        <div class="font-medium">${collection.title}</div>
-                        <div class="text-xs text-gray-400">${collection.description}</div>
-                    `;
-
-                    collectionEl.addEventListener('click', () => {
-                        document.querySelector('input[name="url"]').value = serverUrl;
-                        if (username) document.querySelector('input[name="username"]').value = username;
-                        if (password) document.querySelector('input[name="password"]').value = password;
-                        document.querySelector('input[name="collection"]').value = collection.title;
-                    });
-
-                    collectionsList.appendChild(collectionEl);
-                });
-            }
-
-            document.getElementById('discovery-results').classList.remove('hidden');
+        if (form.classList.contains('max-h-0')) {
+            form.classList.remove('max-h-0');
+            form.classList.add('max-h-screen');
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
         } else {
-            document.getElementById('discovery-error').textContent = data.error || 'Error discovering collections';
-            document.getElementById('discovery-error').classList.remove('hidden');
+            form.classList.add('max-h-0');
+            form.classList.remove('max-h-screen');
+            icon.classList.add('fa-chevron-down');
+            icon.classList.remove('fa-chevron-up');
         }
-    } catch (error) {
-        document.getElementById('discovery-error').textContent = 'Failed to connect to server';
-        document.getElementById('discovery-error').classList.remove('hidden');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Discover';
-    }
-});
+    });
 
+    // Simulate discovery functionality
+    document.getElementById('discover-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const results = document.getElementById('discovery-results');
+        const error = document.getElementById('discovery-error');
 
-    </script>
-</body>
-</html>
+        // Show loading state
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Discovering...';
+        this.disabled = true;
+
+        // Simulate API call
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-search mr-2"></i> Discover Collections';
+            this.disabled = false;
+
+            // Mock results - in a real app, this would come from an API
+            const mockCollections = [
+                { name: 'Malware Indicators', description: 'Known malware hashes and C2 servers' },
+                { name: 'Phishing URLs', description: 'Recent phishing campaign URLs' },
+                { name: 'APT Activity', description: 'Advanced persistent threat indicators' },
+                { name: 'Exploits', description: 'Known exploits and vulnerabilities' }
+            ];
+
+            const list = document.getElementById('collections-list');
+            list.innerHTML = '';
+
+            mockCollections.forEach(collection => {
+                const item = document.createElement('div');
+                item.className = 'p-4 hover:bg-dark-600 transition-colors cursor-pointer';
+                item.innerHTML = `
+                    <div class="font-medium text-gray-100">${collection.name}</div>
+                    <div class="text-sm text-gray-400 mt-1">${collection.description}</div>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('collection-count').textContent = `${mockCollections.length} found`;
+            results.classList.remove('hidden');
+            error.classList.add('hidden');
+        }, 1500);
+    });
+
+    // Search functionality
+    document.getElementById('indicator-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.table-row');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Refresh indicators
+    document.getElementById('refresh-indicators').addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Refreshing...';
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Refresh';
+            // In a real app, this would reload the indicators
+        }, 2000);
+    });
+</script>
+
+</body> </html>
