@@ -6,6 +6,8 @@
     <title>TAXII Feed Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Include PrismJS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
     <script>
         tailwind.config = {
             theme: {
@@ -39,6 +41,7 @@
                             900: '#121212',
                         },
                         accent: '#3A86FF',
+                        'accent-light': '#69A1FF', // Added for hover effect
                     },
                     fontFamily: {
                         sans: ['"Inter"', 'sans-serif'],
@@ -68,8 +71,8 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #121212;
-            color: #E9ECEF;
+            background-color: #121212; /* dark.DEFAULT */
+            color: #E9ECEF; /* dark.100 */
         }
 
         /* Modern scrollbar */
@@ -79,67 +82,84 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #212529;
+            background: #212529; /* dark.800 */
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #495057;
+            background: #495057; /* dark.600 */
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #6C757D;
+            background: #6C757D; /* dark.500 */
         }
 
         /* Card styling */
         .card {
-            background: #212529;
+            background: #212529; /* dark.800 */
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
+            border: 1px solid #343A40; /* dark.700 */
         }
 
         .card:hover {
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
+            border-color: #495057; /* dark.600 */
         }
 
         /* Input styling */
         .input-field {
-            background: #343A40;
-            border: 1px solid #495057;
+            background: #343A40; /* dark.700 */
+            border: 1px solid #495057; /* dark.600 */
             transition: all 0.2s ease;
-            color: #E9ECEF;
+            color: #E9ECEF; /* dark.100 */
         }
 
         .input-field:focus {
-            border-color: #00B4A0;
+            border-color: #00B4A0; /* primary.DEFAULT */
             box-shadow: 0 0 0 2px rgba(0, 180, 160, 0.2);
             outline: none;
+            background: #495057; /* dark.600 */
         }
+        .input-field::placeholder {
+            color: #6C757D; /* dark.500 */
+        }
+
 
         /* Button styling */
         .btn-primary {
-            background: linear-gradient(135deg, #00B4A0 0%, #008F80 100%);
+            background: linear-gradient(135deg, #00B4A0 0%, #008F80 100%); /* primary.500 to primary.600 */
             transition: all 0.2s ease;
             font-weight: 500;
+            color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0, 180, 160, 0.3);
         }
-
-        .btn-secondary {
-            background: #3A86FF;
-            transition: all 0.2s ease;
-            font-weight: 500;
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        .btn-secondary:hover {
-            background: #2A75E6;
+        .btn-secondary {
+            background: #3A86FF; /* accent.DEFAULT */
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #2A75E6; /* Darker accent */
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(58, 134, 255, 0.3);
+        }
+         .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* Table styling */
@@ -148,7 +168,7 @@
         }
 
         .table-row:hover {
-            background: rgba(0, 180, 160, 0.05) !important;
+            background: rgba(0, 180, 160, 0.05) !important; /* primary.500 with low opacity */
         }
 
         /* Status indicators */
@@ -161,7 +181,7 @@
         }
 
         .status-active {
-            background-color: #00B4A0;
+            background-color: #00B4A0; /* primary.500 */
             box-shadow: 0 0 8px rgba(0, 180, 160, 0.5);
         }
 
@@ -182,10 +202,10 @@
             }
         }
 
-        /* Ajoutez ceci dans votre section <style> */
+        /* Footer gradient and pattern */
         .footer-gradient {
             background: linear-gradient(to top,
-                rgba(18, 18, 18, 1) 0%,
+                rgba(18, 18, 18, 1) 0%,    /* dark.DEFAULT */
                 rgba(18, 18, 18, 0.9) 30%,
                 rgba(18, 18, 18, 0.7) 60%,
                 rgba(18, 18, 18, 0.5) 80%,
@@ -201,21 +221,82 @@
             height: 80px;
             background-image: url("{{ url_for('static', filename='images/sei.png') }}");
             background-size: 30%;
-            background-repeat: no-repeat;  /* Pas de répétition */
+            background-repeat: no-repeat;
             background-position: bottom;
-            opacity: 0.3;
+            opacity: 0.1; /* Reduced opacity */
             z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Style for modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Darker overlay */
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #212529; /* dark.800 */
+            margin: 5% auto; /* 5% from the top and centered */
+            padding: 25px;
+            border: 1px solid #495057; /* dark.600 */
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 800px; /* Maximum width */
+            border-radius: 8px;
+            color: #E9ECEF; /* dark.100 */
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .close-button {
+            color: #ADB5BD; /* dark.400 */
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #F8F9FA; /* dark.50 */
+            text-decoration: none;
+        }
+        /* PrismJS adjustments */
+        pre[class*="language-"] {
+            background: #121212; /* dark.900 */
+            border: 1px solid #343A40; /* dark.700 */
+            border-radius: 5px;
+            padding: 1em;
+            margin-top: 1em;
+            max-height: 400px; /* Limit height */
+            overflow: auto; /* Add scrollbars */
+        }
+        code[class*="language-"] {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+            color: #E9ECEF; /* dark.100 */
+        }
+        /* Ensure icons inside buttons are aligned */
+        button i {
+            vertical-align: middle;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-dark-900 text-dark-100">
     <div class="flex-grow">
         <!-- Header Section -->
-        <header class="bg-dark-900 border-b border-dark-700 py-4">
+        <header class="bg-dark-900 border-b border-dark-700 py-4 sticky top-0 z-50">
             <div class="container mx-auto px-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-4">
-                        <div class="bg-primary-500 p-2 rounded-lg">
+                        <div class="bg-primary-500 p-2 rounded-lg shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
@@ -224,16 +305,17 @@
                     </div>
                     <div class="flex items-center space-x-6">
                         <div class="hidden md:flex items-center space-x-4">
-                            <div class="text-sm text-gray-400">Last updated: <span class="text-white">Just now</span></div>
+                            <!-- <div class="text-sm text-gray-400">Last updated: <span class="text-white">Just now</span></div> -->
                             <div class="flex items-center space-x-2">
                                 <span class="status-indicator status-active"></span>
-                                <span class="text-sm">Connected</span>
+                                <span class="text-sm text-gray-300">Online</span>
                             </div>
                         </div>
-                        <button class="btn-secondary px-4 py-2 rounded-lg text-sm flex items-center">
+                        <!-- Removed redundant New Feed button, Add Feed form is always visible -->
+                        <!-- <button class="btn-secondary px-4 py-2 rounded-lg text-sm flex items-center">
                             <i class="fas fa-plus mr-2"></i>
                             New Feed
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </div>
@@ -243,14 +325,14 @@
         <main class="container mx-auto px-4 py-8">
             <!-- Stats Overview -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="card p-6 animate-fade-in">
+                 <div class="card p-6 animate-fade-in">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-gray-400 text-sm font-medium">Total Indicators</h3>
                             <p class="text-2xl font-bold mt-1">{{ indicators|length }}</p>
                         </div>
                         <div class="bg-primary-500/10 p-3 rounded-full">
-                            <i class="fas fa-shield-alt text-primary-500"></i>
+                            <i class="fas fa-shield-alt text-primary-500 text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -261,18 +343,18 @@
                             <p class="text-2xl font-bold mt-1">{{ feeds|length }}</p>
                         </div>
                         <div class="bg-accent/10 p-3 rounded-full">
-                            <i class="fas fa-rss text-accent"></i>
+                            <i class="fas fa-rss text-accent text-xl"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card p-6 animate-fade-in" style="animation-delay: 0.2s">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-gray-400 text-sm font-medium">Last Updated</h3>
-                            <p class="text-2xl font-bold mt-1">Now</p>
+                            <h3 class="text-gray-400 text-sm font-medium">Last Refreshed</h3>
+                            <p class="text-lg font-bold mt-1" id="last-refreshed">Never</p> <!-- Add ID -->
                         </div>
-                        <div class="bg-secondary/10 p-3 rounded-full">
-                            <i class="fas fa-clock text-secondary"></i>
+                         <div class="bg-secondary/10 p-3 rounded-full">
+                            <i class="fas fa-clock text-secondary text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -285,40 +367,38 @@
                     <div class="card p-6 animate-slide-up">
                         <div class="flex items-center justify-between mb-6">
                             <h2 class="text-lg font-semibold">Feed Management</h2>
-                            <button class="text-gray-400 hover:text-primary-500">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
+                            <!-- Optional: Add toggle for add feed form -->
                         </div>
 
-                        <form action="/add_feed" method="POST" class="space-y-4 mb-6">
+                        <form action="{{ url_for('add_feed') }}" method="POST" class="space-y-4 mb-6">
                             <div>
-                                <label class="block text-gray-400 text-sm font-medium mb-1">Feed Name</label>
-                                <input type="text" name="name" required
-                                       class="input-field w-full px-3 py-2 rounded-lg">
+                                <label for="feed-name" class="block text-gray-400 text-sm font-medium mb-1">Feed Name</label>
+                                <input type="text" id="feed-name" name="name" required placeholder="e.g., My Threat Feed"
+                                       class="input-field w-full px-3 py-2 rounded-lg text-sm">
                             </div>
                             <div>
-                                <label class="block text-gray-400 text-sm font-medium mb-1">TAXII Server URL</label>
-                                <input type="url" name="url" required
-                                       class="input-field w-full px-3 py-2 rounded-lg">
+                                <label for="api-root-url" class="block text-gray-400 text-sm font-medium mb-1">TAXII API Root URL</label>
+                                <input type="url" id="api-root-url" name="url" required placeholder="e.g., http://localhost:6100/example1/"
+                                       class="input-field w-full px-3 py-2 rounded-lg text-sm">
                             </div>
                             <div>
-                                <label class="block text-gray-400 text-sm font-medium mb-1">Collection Name</label>
-                                <input type="text" name="collection" required
-                                       class="input-field w-full px-3 py-2 rounded-lg">
+                                <label for="collection-title" class="block text-gray-400 text-sm font-medium mb-1">Collection Title</label>
+                                <input type="text" id="collection-title" name="collection" required placeholder="e.g., High Value Indicator Collection"
+                                       class="input-field w-full px-3 py-2 rounded-lg text-sm">
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-gray-400 text-sm font-medium mb-1">Username</label>
-                                    <input type="text" name="username"
-                                           class="input-field w-full px-3 py-2 rounded-lg">
+                                    <label for="feed-username" class="block text-gray-400 text-sm font-medium mb-1">Username (Optional)</label>
+                                    <input type="text" id="feed-username" name="username" placeholder="api_user"
+                                           class="input-field w-full px-3 py-2 rounded-lg text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-gray-400 text-sm font-medium mb-1">Password</label>
-                                    <input type="password" name="password"
-                                           class="input-field w-full px-3 py-2 rounded-lg">
+                                    <label for="feed-password" class="block text-gray-400 text-sm font-medium mb-1">Password (Optional)</label>
+                                    <input type="password" id="feed-password" name="password" placeholder="api_password"
+                                           class="input-field w-full px-3 py-2 rounded-lg text-sm">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary w-full py-2 px-4 rounded-lg flex items-center justify-center">
+                            <button type="submit" class="btn-primary w-full py-2 px-4 rounded-lg flex items-center justify-center text-sm">
                                 <i class="fas fa-plus mr-2"></i>
                                 Add Feed
                             </button>
@@ -326,25 +406,30 @@
 
                         <div class="border-t border-dark-700 pt-4">
                             <h3 class="text-gray-400 text-sm font-medium mb-3">CONFIGURED FEEDS</h3>
-                            <div class="space-y-3">
-                                {% for feed in feeds %}
-                                <div class="card p-3 flex justify-between items-center hover:bg-dark-700 transition-colors">
-                                    <div class="flex items-center">
-                                        <div class="bg-primary-500/10 p-2 rounded-full mr-3">
-                                            <i class="fas fa-rss text-primary-500 text-sm"></i>
+                            <div class="space-y-3 max-h-60 overflow-y-auto pr-2"> <!-- Added scroll and padding-right -->
+                                {% if feeds %}
+                                    {% for feed in feeds %}
+                                    <div class="card p-3 flex justify-between items-center hover:bg-dark-700 transition-colors">
+                                        <div class="flex items-center overflow-hidden mr-2"> <!-- Added overflow -->
+                                            <div class="bg-primary-500/10 p-2 rounded-full mr-3 flex-shrink-0">
+                                                <i class="fas fa-rss text-primary-500 text-sm"></i>
+                                            </div>
+                                            <div class="truncate"> <!-- Added truncate -->
+                                                <h4 class="font-medium text-sm truncate" title="{{ feed.name }}">{{ feed.name }}</h4>
+                                                <p class="text-xs text-gray-400 truncate" title="{{ feed.collection }}">{{ feed.collection }}</p>
+                                                <p class="text-xs text-gray-500 truncate" title="{{ feed.url }}">{{ feed.url }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 class="font-medium text-sm">{{ feed.name }}</h4>
-                                            <p class="text-xs text-gray-400">{{ feed.collection }}</p>
-                                        </div>
+                                        <form action="{{ url_for('delete_feed', feed_id=loop.index0) }}" method="POST" class="flex-shrink-0">
+                                            <button type="submit" class="text-gray-400 hover:text-secondary transition-colors p-1" title="Delete Feed">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </form>
                                     </div>
-                                    <form action="/delete_feed/{{ loop.index0 }}" method="POST">
-                                        <button type="submit" class="text-gray-400 hover:text-secondary transition-colors p-1">
-                                            <i class="fas fa-trash text-sm"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                                {% endfor %}
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-sm text-gray-500 text-center py-4">No feeds configured yet.</p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -352,50 +437,79 @@
                     <!-- Discovery Section -->
                     <div class="card p-6 mt-6 animate-slide-up" style="animation-delay: 0.1s">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold">Discover Collections</h2>
+                            <h2 class="text-lg font-semibold">Discover Server Info</h2>
                             <button id="toggle-discovery" class="text-gray-400 hover:text-primary-500">
                                 <i class="fas fa-chevron-down"></i>
                             </button>
                         </div>
 
-                        <div id="discovery-form" class="transition-all duration-300 overflow-hidden max-h-0">
+                        <div id="discovery-form" class="transition-all duration-300 ease-in-out overflow-hidden max-h-0">
                             <div class="space-y-4">
-                                <div>
-                                    <label class="block text-gray-400 text-sm font-medium mb-1">TAXII Server URL</label>
-                                    <div class="flex">
-                                        <select class="input-field border-r-0 rounded-l-lg px-3 py-2 text-sm bg-dark-800">
-                                            <option>https://</option>
-                                            <option>http://</option>
-                                        </select>
-                                        <input type="url" id="discovery-url" placeholder="taxii.example.com/api"
-                                               class="input-field flex-1 rounded-r-lg px-3 py-2">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-400 text-sm font-medium mb-1">API Root</label>
-                                    <input type="text" id="discovery-api-root" placeholder="default"
-                                           class="input-field w-full px-3 py-2 rounded-lg">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
+                                <!-- API Root Discovery -->
+                                <div class="border-b border-dark-700 pb-4">
+                                    <h3 class="text-md font-semibold mb-2 text-primary-300">1. Discover API Roots</h3>
                                     <div>
-                                        <label class="block text-gray-400 text-sm font-medium mb-1">Username</label>
-                                        <input type="text" id="discovery-username" placeholder="Username"
-                                               class="input-field w-full px-3 py-2 rounded-lg">
+                                        <label for="discovery-server-url" class="block text-gray-400 text-sm font-medium mb-1">TAXII Server Base URL</label>
+                                         <input type="url" id="discovery-server-url" placeholder="e.g., http://localhost:6100"
+                                               class="input-field w-full rounded-lg px-3 py-2 text-sm">
                                     </div>
-                                    <div>
-                                        <label class="block text-gray-400 text-sm font-medium mb-1">Password</label>
-                                        <input type="password" id="discovery-password" placeholder="Password"
-                                               class="input-field w-full px-3 py-2 rounded-lg">
+                                     <div class="grid grid-cols-2 gap-4 mt-2">
+                                        <div>
+                                            <label for="discovery-root-username" class="block text-gray-400 text-sm font-medium mb-1">Username</label>
+                                            <input type="text" id="discovery-root-username" placeholder="Username"
+                                                   class="input-field w-full px-3 py-2 rounded-lg text-sm">
+                                        </div>
+                                        <div>
+                                            <label for="discovery-root-password" class="block text-gray-400 text-sm font-medium mb-1">Password</label>
+                                            <input type="password" id="discovery-root-password" placeholder="Password"
+                                                   class="input-field w-full px-3 py-2 rounded-lg text-sm">
+                                        </div>
                                     </div>
+                                    <button id="discover-roots-btn" class="btn-secondary w-full mt-3 py-2 px-4 rounded-lg flex items-center justify-center text-sm">
+                                        <i class="fas fa-network-wired mr-2"></i>
+                                        Discover API Roots
+                                    </button>
+                                    <div id="api-roots-results" class="hidden mt-3 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
+                                        <div class="p-2 border-b border-dark-700 bg-dark-900 flex justify-between items-center">
+                                            <h4 class="font-medium text-xs">Available API Roots</h4>
+                                            <span class="text-xs bg-secondary text-white px-1.5 py-0.5 rounded-full font-medium" id="api-root-count">0 found</span>
+                                        </div>
+                                        <div id="api-roots-list" class="divide-y divide-dark-700 max-h-40 overflow-y-auto text-xs p-2 space-y-1">
+                                            <!-- API Roots will be populated here -->
+                                        </div>
+                                    </div>
+                                     <div id="api-roots-error" class="hidden mt-2 p-2 bg-red-900/30 border border-red-800 text-red-100 rounded-lg text-xs"></div>
                                 </div>
-                                <button id="discover-btn" class="btn-primary w-full py-2 px-4 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-search mr-2"></i>
-                                    Discover Collections
-                                </button>
+
+                                <!-- Collection Discovery -->
+                                <div class="pt-4">
+                                     <h3 class="text-md font-semibold mb-2 text-primary-300">2. Discover Collections (per API Root)</h3>
+                                    <div>
+                                        <label for="discovery-api-root-url" class="block text-gray-400 text-sm font-medium mb-1">TAXII API Root URL</label>
+                                        <input type="url" id="discovery-api-root-url" placeholder="Paste API Root URL from above"
+                                               class="input-field w-full rounded-lg px-3 py-2 text-sm">
+                                    </div>
+                                     <div class="grid grid-cols-2 gap-4 mt-2">
+                                        <div>
+                                            <label for="discovery-coll-username" class="block text-gray-400 text-sm font-medium mb-1">Username</label>
+                                            <input type="text" id="discovery-coll-username" placeholder="Username (if different)"
+                                                   class="input-field w-full px-3 py-2 rounded-lg text-sm">
+                                        </div>
+                                        <div>
+                                            <label for="discovery-coll-password" class="block text-gray-400 text-sm font-medium mb-1">Password</label>
+                                            <input type="password" id="discovery-coll-password" placeholder="Password (if different)"
+                                                   class="input-field w-full px-3 py-2 rounded-lg text-sm">
+                                        </div>
+                                    </div>
+                                    <button id="discover-collections-btn" class="btn-primary w-full mt-3 py-2 px-4 rounded-lg flex items-center justify-center text-sm">
+                                        <i class="fas fa-search mr-2"></i>
+                                        Discover Collections
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div id="discovery-results" class="hidden mt-4 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
+                        <div id="discovery-collections-results" class="hidden mt-4 bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
                             <div class="p-3 border-b border-dark-700 bg-dark-900 flex justify-between items-center">
                                 <h4 class="font-medium text-sm">Available Collections</h4>
                                 <span class="text-xs bg-primary-500 text-white px-2 py-1 rounded-full font-medium" id="collection-count">0 found</span>
@@ -405,7 +519,7 @@
                             </div>
                         </div>
 
-                        <div id="discovery-error" class="hidden mt-3 p-3 bg-red-900/30 border border-red-800 text-red-100 rounded-lg text-xs"></div>
+                        <div id="discovery-collections-error" class="hidden mt-3 p-3 bg-red-900/30 border border-red-800 text-red-100 rounded-lg text-xs"></div>
                     </div>
                 </div>
 
@@ -415,101 +529,119 @@
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
                             <div>
                                 <h2 class="text-lg font-semibold mb-1">Threat Indicators</h2>
-                                <p class="text-sm text-gray-400">Showing {{ indicators|length }} active indicators</p>
+                                <p class="text-sm text-gray-400">Showing <span id="indicator-count-display">{{ indicators|length }}</span> indicators</p>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <input type="text" id="indicator-search" placeholder="Search indicators..."
-                                           class="input-field pl-9 pr-3 py-2 rounded-lg text-sm w-full md:w-56">
-                                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                            <div class="flex items-center gap-3 w-full md:w-auto">
+                                <div class="relative flex-grow md:flex-grow-0">
+                                    <form action="{{ url_for('search') }}" method="GET" class="flex">
+                                        <div class="relative flex-grow">
+                                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                                <i class="fas fa-search text-sm"></i>
+                                            </span>
+                                            <input type="text" name="q" id="indicator-search" placeholder="Search indicators..." value="{{ search_query or '' }}"
+                                                   class="input-field pl-9 pr-3 py-2 rounded-l-lg text-sm w-full focus:outline-none">
+                                        </div>
+                                        <button type="submit" class="bg-primary-600 hover:bg-primary-700 px-3 rounded-r-lg text-white text-sm flex-shrink-0">
+                                             Search
+                                        </button>
+                                    </form>
                                 </div>
-                                <button id="refresh-indicators" class="btn-primary py-2 px-4 rounded-lg text-sm flex items-center">
+                                <button id="refresh-indicators" class="btn-primary py-2 px-4 rounded-lg text-sm flex items-center flex-shrink-0">
                                     <i class="fas fa-sync-alt mr-2"></i>
-                                    Refresh
+                                    Refresh All
                                 </button>
                             </div>
                         </div>
 
                         <div class="overflow-x-auto">
-                            <table class="min-w-full">
+                            <table class="min-w-full table-fixed"> <!-- Added table-fixed -->
                                 <thead class="bg-dark-800">
                                     <tr>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Value</th>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Source</th>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">First Seen</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-1/4">Type</th> <!-- Added width -->
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-2/5">Value / Pattern</th> <!-- Added width -->
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-1/5">Feed Source</th> <!-- Added width -->
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-1/5">Modified</th> <!-- Added width -->
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider w-auto">Actions</th> <!-- Added width -->
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-dark-700">
-                                    {% for indicator in indicators %}
-                                    <tr class="table-row hover:bg-dark-800/50">
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0">
-                                                    {% if indicator.type == "ipv4-addr" %}
-                                                    <div class="bg-blue-500/10 p-1.5 rounded-full">
-                                                        <i class="fas fa-network-wired text-blue-500 text-sm"></i>
+                                <tbody class="divide-y divide-dark-700" id="indicator-table-body">
+                                    {% if indicators %}
+                                        {% for indicator in indicators %}
+                                        <tr class="table-row hover:bg-dark-800/50">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0">
+                                                        {% set icon_class = 'fa-question-circle' %}
+                                                        {% set icon_color = 'gray' %}
+                                                        {% if 'ipv4' in indicator.type or 'ipv6' in indicator.type %}
+                                                            {% set icon_class = 'fa-network-wired' %} {% set icon_color = 'blue' %}
+                                                        {% elif 'domain-name' in indicator.type %}
+                                                            {% set icon_class = 'fa-globe' %} {% set icon_color = 'purple' %}
+                                                        {% elif 'url' in indicator.type %}
+                                                            {% set icon_class = 'fa-link' %} {% set icon_color = 'green' %}
+                                                        {% elif 'file' in indicator.type %}
+                                                            {% set icon_class = 'fa-file' %} {% set icon_color = 'yellow' %}
+                                                        {% elif 'email-addr' in indicator.type %}
+                                                            {% set icon_class = 'fa-envelope' %} {% set icon_color = 'red' %}
+                                                        {% endif %}
+                                                        <div class="bg-{{ icon_color }}-500/10 p-1.5 rounded-full inline-flex items-center justify-center w-7 h-7">
+                                                            <i class="fas {{ icon_class }} text-{{ icon_color }}-400 text-sm"></i> <!-- Adjusted color darkness -->
+                                                        </div>
                                                     </div>
-                                                    {% elif indicator.type == "domain-name" %}
-                                                    <div class="bg-purple-500/10 p-1.5 rounded-full">
-                                                        <i class="fas fa-globe text-purple-500 text-sm"></i>
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-dark-100">{{ indicator.type }}</div>
                                                     </div>
-                                                    {% elif indicator.type == "url" %}
-                                                    <div class="bg-green-500/10 p-1.5 rounded-full">
-                                                        <i class="fas fa-link text-green-500 text-sm"></i>
-                                                    </div>
-                                                    {% elif indicator.type == "file" %}
-                                                    <div class="bg-yellow-500/10 p-1.5 rounded-full">
-                                                        <i class="fas fa-file text-yellow-500 text-sm"></i>
-                                                    </div>
-                                                    {% else %}
-                                                    <div class="bg-gray-500/10 p-1.5 rounded-full">
-                                                        <i class="fas fa-question-circle text-gray-500 text-sm"></i>
-                                                    </div>
-                                                    {% endif %}
                                                 </div>
-                                                <div class="ml-3">
-                                                    <div class="text-sm font-medium">{{ indicator.type }}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm font-mono">{{ indicator.value }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm text-gray-400">{{ indicator.source }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm text-gray-400">{{ indicator.first_seen }}</div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <button class="text-gray-400 hover:text-primary-500 mr-2">
-                                                <i class="fas fa-eye text-sm"></i>
-                                            </button>
-                                            <button class="text-gray-400 hover:text-secondary">
-                                                <i class="fas fa-ban text-sm"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                            </td>
+                                            <td class="px-4 py-3"> <!-- Removed max-width, let table-fixed handle -->
+                                                <div class="text-sm font-mono text-dark-200 break-words" title="{{ indicator.value }}">{{ indicator.value }}</div> <!-- Added break-words -->
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="text-sm text-gray-400">{{ indicator.feed_source | default(indicator.source) }}</div> <!-- Use feed_source -->
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="text-sm text-gray-400">{{ indicator.modified or indicator.created or indicator.first_seen or 'N/A' }}</div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-right">
+                                                <button class="text-gray-400 hover:text-primary-500 mr-2 view-indicator-details" data-id="{{ indicator.id }}" title="View Details">
+                                                    <i class="fas fa-eye text-sm"></i>
+                                                </button>
+                                                <button class="text-gray-400 hover:text-accent copy-indicator-value" data-value="{{ indicator.value }}" title="Copy Value">
+                                                    <i class="fas fa-copy text-sm"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-10 text-gray-500">
+                                                {% if search_query %}
+                                                    No indicators found matching your search. <a href="{{ url_for('index') }}" class="text-primary-500 hover:underline">Clear search</a>.
+                                                {% else %}
+                                                    No indicators loaded. Try adding a feed and clicking 'Refresh All'.
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
 
+                        <!-- Pagination (Static for now) -->
                         <div class="mt-6 flex items-center justify-between">
                             <div class="text-sm text-gray-400">
-                                Showing <span class="font-medium">{{ indicators|length }}</span> of {{ indicators|length }} indicators
+                                Showing <span class="font-medium">{{ indicators|length }}</span> indicators
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button class="px-3 py-1 rounded border border-dark-700 hover:bg-dark-800 transition-colors text-sm">
+                            <!-- Static Pagination Placeholder -->
+                            <!-- <div class="flex items-center gap-2">
+                                <button class="px-3 py-1 rounded border border-dark-700 hover:bg-dark-800 transition-colors text-sm disabled:opacity-50" disabled>
                                     <i class="fas fa-chevron-left"></i>
                                 </button>
                                 <span class="text-sm">Page 1 of 1</span>
-                                <button class="px-3 py-1 rounded border border-dark-700 hover:bg-dark-800 transition-colors text-sm">
+                                <button class="px-3 py-1 rounded border border-dark-700 hover:bg-dark-800 transition-colors text-sm disabled:opacity-50" disabled>
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -517,33 +649,56 @@
         </main>
     </div>
 
-    <!-- Footer -->
-        <footer class="relative">
-            <!-- Dégradé et motif seigaha -->
-            <div class="seigaha-pattern"></div>
-            <div class="footer-gradient">
-                <div class="bg-dark-900 border-t border-dark-700 py-6">
-                    <div class="container mx-auto px-4">
-                        <div class="flex flex-col md:flex-row justify-between items-center">
-                            <div class="mb-4 md:mb-0">
-                                <p class="text-sm text-gray-400">© 2023 TAXII Feed Viewer. All rights reserved.</p>
-                            </div>
-                            <div class="flex items-center space-x-6">
-                                <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
-                                    <i class="fab fa-github mr-1"></i> GitHub
-                                </a>
-                                <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
-                                    <i class="fas fa-book mr-1"></i> Documentation
-                                </a>
-                                <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
-                                    <i class="fas fa-question-circle mr-1"></i> Support
-                                </a>
-                            </div>
+
+<!-- Footer -->
+    <footer class="relative mt-12"> <!-- Added margin-top -->
+        <div class="seigaha-pattern"></div>
+        <div class="footer-gradient">
+            <div class="bg-dark-900 border-t border-dark-700 py-6">
+                <div class="container mx-auto px-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center">
+                        <div class="mb-4 md:mb-0">
+                            <!-- **** MODIFIED LINE **** -->
+                            <p class="text-sm text-gray-400">© {{ current_year }} TAXII Feed Viewer. Simple CTI Interface.</p>
+                            <!-- **** END MODIFIED LINE **** -->
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
+                                <i class="fab fa-github mr-1"></i> GitHub
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
+                                <i class="fas fa-book mr-1"></i> Documentation
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors text-sm">
+                                <i class="fas fa-question-circle mr-1"></i> Support
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-        </footer>
+        </div>
+    </footer>
+
+
+
+    <!-- Indicator Details Modal -->
+    <div id="indicatorModal" class="modal">
+        <div class="modal-content animate-slide-up">
+            <span class="close-button" onclick="closeModal()">×</span>
+            <h2 class="text-xl font-semibold mb-4" id="modal-title">Indicator Details</h2>
+            <div id="modal-body" class="space-y-3 text-sm">
+                <p>Loading...</p>
+            </div>
+             <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-2">Raw STIX Object</h3>
+                <pre><code class="language-json" id="modal-raw-stix"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include PrismJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
     <script>
         // Toggle discovery section
@@ -552,83 +707,319 @@
             const icon = this.querySelector('i');
 
             if (form.classList.contains('max-h-0')) {
+                form.style.maxHeight = form.scrollHeight + "px"; // Expand to content height
                 form.classList.remove('max-h-0');
-                form.classList.add('max-h-screen');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
             } else {
+                form.style.maxHeight = "0px"; // Collapse
                 form.classList.add('max-h-0');
-                form.classList.remove('max-h-screen');
-                icon.classList.add('fa-chevron-down');
-                icon.classList.remove('fa-chevron-up');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
             }
         });
 
-        // Simulate discovery functionality
-        document.getElementById('discover-btn').addEventListener('click', function(e) {
+        // --- Discovery API Roots ---
+        document.getElementById('discover-roots-btn').addEventListener('click', async function(e) {
             e.preventDefault();
-            const results = document.getElementById('discovery-results');
-            const error = document.getElementById('discovery-error');
+            const btn = this;
+            const resultsDiv = document.getElementById('api-roots-results');
+            const errorDiv = document.getElementById('api-roots-error');
+            const list = document.getElementById('api-roots-list');
+            const countSpan = document.getElementById('api-root-count');
+            const serverUrl = document.getElementById('discovery-server-url').value;
+            const username = document.getElementById('discovery-root-username').value;
+            const password = document.getElementById('discovery-root-password').value;
 
-            // Show loading state
-            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Discovering...';
-            this.disabled = true;
+            // Reset state
+            resultsDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            list.innerHTML = '';
+            countSpan.textContent = '0 found';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Discovering...';
+            btn.disabled = true;
 
-            // Simulate API call
-            setTimeout(() => {
-                this.innerHTML = '<i class="fas fa-search mr-2"></i> Discover Collections';
-                this.disabled = false;
+            if (!serverUrl) {
+                 errorDiv.textContent = 'Server Base URL is required.';
+                 errorDiv.classList.remove('hidden');
+                 btn.innerHTML = '<i class="fas fa-network-wired mr-2"></i> Discover API Roots';
+                 btn.disabled = false;
+                 return;
+            }
 
-                // Mock results - in a real app, this would come from an API
-                const mockCollections = [
-                    { name: 'Malware Indicators', description: 'Known malware hashes and C2 servers' },
-                    { name: 'Phishing URLs', description: 'Recent phishing campaign URLs' },
-                    { name: 'APT Activity', description: 'Advanced persistent threat indicators' },
-                    { name: 'Exploits', description: 'Known exploits and vulnerabilities' }
-                ];
+            try {
+                const formData = new FormData();
+                formData.append('server_url', serverUrl);
+                formData.append('username', username);
+                formData.append('password', password);
 
-                const list = document.getElementById('collections-list');
-                list.innerHTML = '';
-
-                mockCollections.forEach(collection => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 hover:bg-dark-700 transition-colors cursor-pointer';
-                    item.innerHTML = `
-                        <div class="font-medium text-sm">${collection.name}</div>
-                        <div class="text-xs text-gray-400 mt-1">${collection.description}</div>
-                    `;
-                    list.appendChild(item);
+                const response = await fetch("{{ url_for('discover_api_roots') }}", {
+                    method: 'POST',
+                    body: formData
                 });
 
-                document.getElementById('collection-count').textContent = `${mockCollections.length} found`;
-                results.classList.remove('hidden');
-                error.classList.add('hidden');
-            }, 1500);
-        });
+                const data = await response.json();
 
-        // Search functionality
-        document.getElementById('indicator-search').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('.table-row');
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
+                if (data.success && data.api_roots) {
+                    if (data.api_roots.length > 0) {
+                        data.api_roots.forEach(root => {
+                            const item = document.createElement('div');
+                            item.className = 'p-1.5 bg-dark-700 rounded hover:bg-dark-600 transition-colors'; // Added background and rounded
+                            item.innerHTML = `
+                                <div class="font-medium text-xs flex justify-between items-center">
+                                    <span class="text-primary-300">${root.title || 'Default'}</span>
+                                    <button class="text-xs text-accent hover:text-accent-light copy-text p-1 rounded hover:bg-dark-800" data-text="${root.url}" title="Copy URL"><i class="fas fa-copy mr-1"></i>Copy URL</button>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-0.5 font-mono">${root.url}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">${root.description}</div>
+                            `;
+                            list.appendChild(item);
+                        });
+                        countSpan.textContent = `${data.api_roots.length} found`;
+                        resultsDiv.classList.remove('hidden');
+                    } else {
+                         errorDiv.textContent = data.message || 'No API Roots found at this URL.';
+                         errorDiv.classList.remove('hidden');
+                    }
                 } else {
-                    row.style.display = 'none';
+                    errorDiv.textContent = data.error || 'Failed to discover API Roots.';
+                    errorDiv.classList.remove('hidden');
                 }
-            });
+            } catch (error) {
+                console.error("Discovery error:", error);
+                errorDiv.textContent = 'An error occurred during discovery. Check console.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-network-wired mr-2"></i> Discover API Roots';
+                btn.disabled = false;
+            }
         });
 
-        // Refresh indicators
-        document.getElementById('refresh-indicators').addEventListener('click', function() {
-            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Refreshing...';
-            setTimeout(() => {
-                this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Refresh';
-                // In a real app, this would reload the indicators
-            }, 2000);
+
+        // --- Discovery Collections ---
+        document.getElementById('discover-collections-btn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            const btn = this;
+            const resultsDiv = document.getElementById('discovery-collections-results');
+            const errorDiv = document.getElementById('discovery-collections-error');
+            const list = document.getElementById('collections-list');
+            const countSpan = document.getElementById('collection-count');
+            const apiUrl = document.getElementById('discovery-api-root-url').value;
+            // Use specific collection discovery credentials, fallback to root discovery credentials
+            const username = document.getElementById('discovery-coll-username').value || document.getElementById('discovery-root-username').value;
+            const password = document.getElementById('discovery-coll-password').value || document.getElementById('discovery-root-password').value;
+
+            // Reset state
+            resultsDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            list.innerHTML = '';
+            countSpan.textContent = '0 found';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Discovering...';
+            btn.disabled = true;
+
+            if (!apiUrl) {
+                 errorDiv.textContent = 'API Root URL is required.';
+                 errorDiv.classList.remove('hidden');
+                 btn.innerHTML = '<i class="fas fa-search mr-2"></i> Discover Collections';
+                 btn.disabled = false;
+                 return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('api_root_url', apiUrl);
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch("{{ url_for('discover_collections') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.collections) {
+                     if (data.collections.length > 0) {
+                        data.collections.forEach(collection => {
+                            const item = document.createElement('div');
+                            item.className = 'p-3 hover:bg-dark-700 transition-colors cursor-pointer';
+                            item.innerHTML = `
+                                <div class="font-medium text-sm flex justify-between items-center">
+                                    <span class="text-primary-300">${collection.title}</span>
+                                    <button class="text-xs text-accent hover:text-accent-light copy-text p-1 rounded hover:bg-dark-800" data-text="${collection.title}" title="Copy Title"><i class="fas fa-copy mr-1"></i>Copy Title</button>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">${collection.description}</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">ID: ${collection.id}
+                                 <button class="ml-2 text-xs text-accent hover:text-accent-light copy-text p-1 rounded hover:bg-dark-800" data-text="${collection.id}" title="Copy ID"><i class="fas fa-copy mr-1"></i>Copy ID</button>
+                                </div>
+
+                            `;
+                            list.appendChild(item);
+                        });
+                        countSpan.textContent = `${data.collections.length} found`;
+                        resultsDiv.classList.remove('hidden');
+                     } else {
+                         errorDiv.textContent = 'No collections found for this API Root.';
+                         errorDiv.classList.remove('hidden');
+                     }
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to discover collections.';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Collection Discovery error:", error);
+                errorDiv.textContent = 'An error occurred during discovery. Check console.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-search mr-2"></i> Discover Collections';
+                btn.disabled = false;
+            }
         });
+
+        // --- Copy Text Helper ---
+        document.body.addEventListener('click', function(event) {
+            let button = null;
+            if (event.target.closest('.copy-text')) {
+                button = event.target.closest('.copy-text');
+                const textToCopy = button.dataset.text;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check mr-1 text-green-500"></i> Copied!';
+                    button.disabled = true;
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Failed to copy text.');
+                });
+            }
+             else if (event.target.closest('.copy-indicator-value')) {
+                button = event.target.closest('.copy-indicator-value');
+                const textToCopy = button.dataset.value;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalIcon = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+                    button.disabled = true;
+                    setTimeout(() => {
+                        button.innerHTML = originalIcon;
+                        button.disabled = false;
+                     }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy indicator value: ', err);
+                    // Optionally provide feedback
+                });
+            }
+        });
+
+
+        // --- Refresh Indicators ---
+        document.getElementById('refresh-indicators').addEventListener('click', async function() {
+            const btn = this;
+            const originalHtml = btn.innerHTML; // Store original button content
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Refreshing...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch("{{ url_for('refresh_feeds') }}", { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Reload the page to show updated indicators and counts
+                    window.location.reload();
+                    // Store refresh time maybe?
+                    // localStorage.setItem('lastRefreshedTime', new Date().toLocaleTimeString());
+                } else {
+                    alert('Error refreshing feeds: ' + (data.errors ? data.errors.join('\n') : 'Unknown error. Check server logs.'));
+                     btn.innerHTML = originalHtml; // Restore button text on error
+                     btn.disabled = false;
+                }
+            } catch (error) {
+                 console.error("Refresh error:", error);
+                 alert('An error occurred while refreshing feeds. Check console and server logs.');
+                 btn.innerHTML = originalHtml; // Restore button text on error
+                 btn.disabled = false;
+            }
+            // No finally needed as success causes reload
+        });
+
+        // --- Indicator Details Modal ---
+        const modal = document.getElementById('indicatorModal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalRawStix = document.getElementById('modal-raw-stix');
+
+        // Use event delegation for dynamically added/refreshed rows
+        document.getElementById('indicator-table-body').addEventListener('click', async function(event) {
+             const button = event.target.closest('.view-indicator-details');
+             if (!button) return; // Exit if the click wasn't on a view button
+
+             const indicatorId = button.dataset.id;
+             modalTitle.textContent = `Details for ${indicatorId}`;
+             modalBody.innerHTML = '<p class="flex items-center justify-center text-gray-400 py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</p>';
+             modalRawStix.textContent = ''; // Clear previous raw data
+             modal.style.display = "block";
+             document.body.style.overflow = 'hidden'; // Prevent background scroll
+
+             try {
+                 const response = await fetch(`/indicator_details/${indicatorId}`);
+                 if (!response.ok) {
+                     throw new Error(`HTTP error! status: ${response.status}`);
+                 }
+                 const data = await response.json();
+
+                 if (data.success && data.indicator) {
+                     const ind = data.indicator;
+                     modalTitle.textContent = `Details for ${ind.type}`; // Removed ID from title for brevity
+                     modalBody.innerHTML = `
+                         <p><strong>ID:</strong> <span class="font-mono text-gray-300">${ind.id}</span></p>
+                         <p><strong>Type:</strong> <span class="text-gray-300">${ind.type}</span></p>
+                         <p><strong>Value/Pattern:</strong></p>
+                         <pre class="bg-dark-900 border border-dark-700 rounded p-2 mt-1"><code class="font-mono text-sm text-yellow-300">${ind.value || 'N/A'}</code></pre>
+                         <p class="mt-2"><strong>Description:</strong> ${ind.description ? '<span class="text-gray-300">' + ind.description + '</span>' : '<em class="text-gray-500">No description</em>'}</p>
+                         <p><strong>Feed Source:</strong> <span class="text-gray-300">${ind.source || ind.feed_source || 'N/A'}</span></p>
+                         <p><strong>Created:</strong> <span class="text-gray-300">${ind.created || 'N/A'}</span></p>
+                         <p><strong>Modified:</strong> <span class="text-gray-300">${ind.modified || 'N/A'}</span></p>
+                         <p><strong>First Seen (valid_from):</strong> <span class="text-gray-300">${ind.first_seen || 'N/A'}</span></p>
+                         <p><strong>Last Seen:</strong> <span class="text-gray-300">${ind.last_seen || 'N/A'}</span></p>
+                     `;
+                     // Display raw STIX
+                     modalRawStix.textContent = ind.raw || JSON.stringify(ind, null, 2); // Use raw if available
+                     Prism.highlightElement(modalRawStix); // Apply syntax highlighting
+
+                 } else {
+                     modalBody.innerHTML = `<p class="text-red-400">Error: ${data.error || 'Could not load indicator details.'}</p>`;
+                 }
+             } catch (error) {
+                 console.error("Error fetching indicator details:", error);
+                 modalBody.innerHTML = `<p class="text-red-400">An error occurred while fetching details: ${error.message}. Check console.</p>`;
+             }
+        });
+
+
+        function closeModal() {
+            modal.style.display = "none";
+            document.body.style.overflow = 'auto'; // Restore background scroll
+        }
+
+        // Close modal if clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Close modal on Escape key
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' || event.key === 'Esc') { // Handle older browsers
+                if (modal.style.display === "block") {
+                     closeModal();
+                }
+            }
+        });
+
+        // Set initial last refreshed time (placeholder - could be improved with localStorage)
+        // Example: document.getElementById('last-refreshed').textContent = localStorage.getItem('lastRefreshedTime') || 'Never';
+
     </script>
 </body>
 </html>
