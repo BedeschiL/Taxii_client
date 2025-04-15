@@ -97,7 +97,7 @@ class TAXIIClient:
             print(f"Response text: {response.text}")
             return []
 
-    def get_indicators(self):
+    def get_indicators(self, simple_indicators=None):
         """Fetch indicators from the configured collection, handling pagination."""
         if not self.api_root_url or not self.collection_title:
             print("Error: API Root URL or Collection Title not configured.")
